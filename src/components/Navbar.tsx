@@ -18,26 +18,28 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 sm:px-10 lg:px-16 py-5 transition-all duration-300">
       {/* Brand Monogram */}
-      <a
-        href="#"
-        className="group flex items-center gap-2.5 text-sm font-mono tracking-widest text-white uppercase select-none"
-      >
-        <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
-          BM
-        </span>
-        <span className="font-semibold tracking-tight text-white group-hover:text-cyan-400 transition-colors">
-          Bharat Mishra
-        </span>
-        <span className="hidden sm:inline text-xs text-slate-500 font-mono">
-          {"// Senior Software Engineer"}
-        </span>
-      </a>
+      <div className="flex md:flex-1 md:basis-0 md:justify-start min-w-0">
+        <a
+          href="#"
+          className="group flex items-center gap-2.5 text-sm font-mono tracking-widest text-white uppercase select-none whitespace-nowrap"
+        >
+          <span className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
+            BM
+          </span>
+          <span className="font-semibold tracking-tight text-white group-hover:text-cyan-400 transition-colors">
+            Bharat Mishra
+          </span>
+          <span className="hidden xl:inline text-xs text-slate-500 font-mono">
+            {"// Senior Software Engineer"}
+          </span>
+        </a>
+      </div>
 
       {/* Floating Glass Navigation Pill */}
       <nav
-        className={`hidden md:flex items-center gap-8 px-6 py-2.5 rounded-full transition-all duration-300 ${scrolled
-            ? "glass-panel shadow-2xl shadow-black/80"
-            : "bg-white/[0.03] border border-white/5"
+        className={`hidden md:flex shrink-0 items-center gap-5 lg:gap-8 px-5 lg:px-6 py-2.5 rounded-full whitespace-nowrap transition-all duration-300 ${scrolled
+          ? "glass-panel shadow-2xl shadow-black/80"
+          : "bg-white/[0.03] border border-white/5"
           }`}
       >
         <a
@@ -73,10 +75,10 @@ export default function Navbar() {
       </nav>
 
       {/* Right Availability CTA */}
-      <div className="hidden sm:flex items-center gap-3">
+      <div className="hidden sm:flex md:flex-1 md:basis-0 items-center justify-end gap-3">
         <a
           href="#contact"
-          className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-orange-500/40 text-slate-200 transition-all"
+          className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono whitespace-nowrap bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-orange-500/40 text-slate-200 transition-all"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>Let&apos;s Talk</span>

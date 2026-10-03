@@ -22,9 +22,8 @@ export default function ScrollyCanvas() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadProgress, setLoadProgress] = useState<number>(0);
-  const [imagesReady, setImagesReady] = useState<boolean>(false);
 
-  // Link scroll progress of the 500vh container (0.0 to 1.0)
+  // Link scroll progress of the 500svh container (0.0 to 1.0)
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
@@ -42,8 +41,11 @@ export default function ScrollyCanvas() {
 
     // Handle high DPI / retina screens
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const displayWidth = window.innerWidth;
-    const displayHeight = window.innerHeight;
+
+    // Use the canvas's real rendered size, not window.innerHeight,
+    // so the bitmap always matches the CSS box on mobile browsers
+    const displayWidth = canvas.clientWidth || window.innerWidth;
+    const displayHeight = canvas.clientHeight || window.innerHeight;
 
     const targetWidth = Math.round(displayWidth * dpr);
     const targetHeight = Math.round(displayHeight * dpr);
@@ -110,54 +112,45 @@ export default function ScrollyCanvas() {
     [drawFrame]
   );
 
-  // Preload all 120 images into memory
+  // Preload all frames into memory (runs once)
   useEffect(() => {
     let isMounted = true;
+    let finished = false;
     let loadedCount = 0;
     const preloadedImages: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+    imagesRef.current = preloadedImages;
 
-    const onImageLoaded = () => {
+    const finish = () => {
+      if (!isMounted || finished) return;
+      finished = true;
+      setLoadProgress(100);
+      setIsLoading(false);
+      drawFrame(currentFrameRef.current);
+    };
+
+    const onImageLoaded = (index: number) => {
       if (!isMounted) return;
       loadedCount++;
-      const progress = Math.round((loadedCount / TOTAL_FRAMES) * 100);
-      setLoadProgress(progress);
+      setLoadProgress(Math.round((loadedCount / TOTAL_FRAMES) * 100));
 
-      // Once the first 12 frames are ready, we can render the initial state
-      if (loadedCount === 12 && !imagesReady) {
-        imagesRef.current = preloadedImages;
-        drawFrame(0);
-      }
+      // Draw as soon as the frame we are currently on is available
+      if (index === currentFrameRef.current) drawFrame(index);
 
-      // When all images are preloaded
-      if (loadedCount === TOTAL_FRAMES) {
-        imagesRef.current = preloadedImages;
-        setImagesReady(true);
-        setIsLoading(false);
-        drawFrame(currentFrameRef.current);
-      }
+      if (loadedCount === TOTAL_FRAMES) finish();
     };
 
     for (let i = 0; i < TOTAL_FRAMES; i++) {
       const img = new Image();
+      img.decoding = "async";
+      img.onload = () => onImageLoaded(i);
+      // Even on error, count it so progress doesn't stall indefinitely
+      img.onerror = () => onImageLoaded(i);
       img.src = getFrameUrl(i);
-      img.onload = onImageLoaded;
-      img.onerror = () => {
-        // Even on error, count it so progress doesn't stall indefinitely
-        onImageLoaded();
-      };
       preloadedImages[i] = img;
     }
 
-    imagesRef.current = preloadedImages;
-
     // Safety timeout: if network takes too long, unveil gracefully
-    const fallbackTimer = setTimeout(() => {
-      if (isMounted && isLoading) {
-        setIsLoading(false);
-        setImagesReady(true);
-        drawFrame(0);
-      }
-    }, 4500);
+    const fallbackTimer = setTimeout(finish, 4500);
 
     return () => {
       isMounted = false;
@@ -166,18 +159,20 @@ export default function ScrollyCanvas() {
         cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [drawFrame, imagesReady, isLoading]);
-
-  // Window resize handler: redraw currently active frame
-  useEffect(() => {
-    const handleResize = () => {
-      drawFrame(currentFrameRef.current);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, [drawFrame]);
 
-  // Scrub through frames as user scrolls through the 500vh container
+  // Redraw whenever the canvas's rendered size changes
+  // (address bar collapsing, rotation, window resize)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const redraw = () => drawFrame(currentFrameRef.current);
+    const observer = new ResizeObserver(redraw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [drawFrame]);
+
+  // Scrub through frames as user scrolls through the 500svh container
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
     if (!imagesRef.current.length) return;
     const frameIndex = Math.min(
@@ -191,10 +186,10 @@ export default function ScrollyCanvas() {
     <div
       ref={containerRef}
       id="hero-scroll"
-      className="relative w-full h-[500vh] bg-[#030f14]"
+      className="relative w-full h-[500svh] bg-[#030f14]"
     >
       {/* Sticky container pinned to viewport */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden flex items-center justify-center">
         {/* HTML5 Canvas */}
         <canvas
           ref={canvasRef}
